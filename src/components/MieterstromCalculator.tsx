@@ -1,60 +1,51 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Calculator, Zap, Euro, TrendingUp, Building, Home } from 'lucide-react';
-
-interface CalculationInputs {
-  systemInput: string; // Can be address, roof size, or system size
-  inputType: 'address' | 'roofSize' | 'systemSize';
-  apartments: number;
-  annualDemand: number;
-}
-
-interface CalculationResults {
-  systemSizeKWp: number;
-  totalInvestment: number;
-  annualProduction: number;
-  annualInternalRevenue: number;
-  annualFeedInRevenue: number;
-  totalAnnualRevenue: number;
-  annualOMCost: number;
-  annualProfit: number;
-  paybackPeriod: number;
-  roi: number;
-}
+import React, { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Calculator, Zap, TrendingUp, Building, Home } from "lucide-react";
+import {
+  SOLAR_YIELD_PER_KWP,
+  COST_PER_KWP,
+  ELECTRICITY_PRICE,
+  FEED_IN_TARIFF,
+  INTERNAL_CONSUMPTION_RATE,
+  FEED_IN_RATE,
+  OM_COST_RATE,
+} from "@/lib/constants";
+import { CalculationInputs, CalculationResults } from "@/lib/types";
 
 const MieterstromCalculator: React.FC = () => {
   const [inputs, setInputs] = useState<CalculationInputs>({
-    systemInput: '',
-    inputType: 'roofSize',
+    systemInput: "",
+    inputType: "roofSize",
     apartments: 1,
-    annualDemand: 0
+    annualDemand: 0,
   });
 
   const [results, setResults] = useState<CalculationResults | null>(null);
 
-  // Constants
-  const SOLAR_YIELD_PER_KWP = 950; // kWh/kWp/year
-  const COST_PER_KWP = 1000; // €/kWp
-  const ELECTRICITY_PRICE = 0.30; // €/kWh
-  const FEED_IN_TARIFF = 0.08; // €/kWh
-  const INTERNAL_CONSUMPTION_RATE = 0.35; // 35%
-  const FEED_IN_RATE = 0.65; // 65%
-  const OM_COST_RATE = 0.01; // 1% of investment
-
   // Detect input type based on content
   useEffect(() => {
     const input = inputs.systemInput.toLowerCase();
-    let detectedType: 'address' | 'roofSize' | 'systemSize' = 'address';
-    
-    if (input.includes('kwp') || input.includes('kw')) {
-      detectedType = 'systemSize';
-    } else if (input.includes('m²') || input.includes('m2') || /^\d+$/.test(input.trim())) {
-      detectedType = 'roofSize';
+    let detectedType: "address" | "roofSize" | "systemSize" = "address";
+
+    if (input.includes("kwp") || input.includes("kw")) {
+      detectedType = "systemSize";
+    } else if (
+      input.includes("m²") ||
+      input.includes("m2") ||
+      /^\d+$/.test(input.trim())
+    ) {
+      detectedType = "roofSize";
     }
-    
-    setInputs(prev => ({ ...prev, inputType: detectedType }));
+
+    setInputs((prev) => ({ ...prev, inputType: detectedType }));
   }, [inputs.systemInput]);
 
   // Calculate results
@@ -67,10 +58,10 @@ const MieterstromCalculator: React.FC = () => {
     let systemSizeKWp = 0;
 
     // Calculate system size based on input type
-    if (inputs.inputType === 'systemSize') {
+    if (inputs.inputType === "systemSize") {
       const match = inputs.systemInput.match(/(\d+(?:\.\d+)?)/);
       systemSizeKWp = match ? parseFloat(match[1]) : 0;
-    } else if (inputs.inputType === 'roofSize') {
+    } else if (inputs.inputType === "roofSize") {
       const match = inputs.systemInput.match(/(\d+(?:\.\d+)?)/);
       const roofSize = match ? parseFloat(match[1]) : 0;
       systemSizeKWp = roofSize / 5;
@@ -87,13 +78,16 @@ const MieterstromCalculator: React.FC = () => {
     // Perform calculations
     const totalInvestment = systemSizeKWp * COST_PER_KWP;
     const annualProduction = systemSizeKWp * SOLAR_YIELD_PER_KWP;
-    const annualInternalRevenue = annualProduction * INTERNAL_CONSUMPTION_RATE * ELECTRICITY_PRICE;
-    const annualFeedInRevenue = annualProduction * FEED_IN_RATE * FEED_IN_TARIFF;
+    const annualInternalRevenue =
+      annualProduction * INTERNAL_CONSUMPTION_RATE * ELECTRICITY_PRICE;
+    const annualFeedInRevenue =
+      annualProduction * FEED_IN_RATE * FEED_IN_TARIFF;
     const totalAnnualRevenue = annualInternalRevenue + annualFeedInRevenue;
     const annualOMCost = totalInvestment * OM_COST_RATE;
     const annualProfit = totalAnnualRevenue - annualOMCost;
     const paybackPeriod = annualProfit > 0 ? totalInvestment / annualProfit : 0;
-    const roi = totalInvestment > 0 ? (annualProfit / totalInvestment) * 100 : 0;
+    const roi =
+      totalInvestment > 0 ? (annualProfit / totalInvestment) * 100 : 0;
 
     setResults({
       systemSizeKWp,
@@ -105,34 +99,39 @@ const MieterstromCalculator: React.FC = () => {
       annualOMCost,
       annualProfit,
       paybackPeriod,
-      roi
+      roi,
     });
   }, [inputs]);
 
   const formatNumber = (num: number, decimals: number = 0): string => {
-    return new Intl.NumberFormat('de-DE', {
+    return new Intl.NumberFormat("de-DE", {
       minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals
+      maximumFractionDigits: decimals,
     }).format(num);
   };
 
   const formatCurrency = (num: number): string => {
-    return new Intl.NumberFormat('de-DE', {
-      style: 'currency',
-      currency: 'EUR',
+    return new Intl.NumberFormat("de-DE", {
+      style: "currency",
+      currency: "EUR",
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      maximumFractionDigits: 0,
     }).format(num);
   };
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--gradient-primary)' }}>
+    <div
+      className="min-h-screen"
+      style={{ background: "var(--gradient-primary)" }}
+    >
       <div className="container mx-auto p-6">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <Zap className="h-12 w-12 text-white mr-3" />
-            <h1 className="text-4xl font-bold text-white">Tenant Power Calculator</h1>
+            <h1 className="text-4xl font-bold text-white">
+              Tenant Power Calculator
+            </h1>
           </div>
           <p className="text-xl text-white/90 max-w-2xl mx-auto">
             Calculate the profitability of your tenant power project
@@ -141,7 +140,10 @@ const MieterstromCalculator: React.FC = () => {
 
         <div className="grid lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
           {/* Input Form */}
-          <Card className="shadow-2xl border-0" style={{ background: 'var(--gradient-card)' }}>
+          <Card
+            className="shadow-2xl border-0"
+            style={{ background: "var(--gradient-card)" }}
+          >
             <CardHeader className="pb-4">
               <div className="flex items-center">
                 <Calculator className="h-6 w-6 text-primary mr-2" />
@@ -161,17 +163,29 @@ const MieterstromCalculator: React.FC = () => {
                   type="text"
                   placeholder="e.g. Main Street 1, 100 m² or 20 kWp"
                   value={inputs.systemInput}
-                  onChange={(e) => setInputs(prev => ({ ...prev, systemInput: e.target.value }))}
+                  onChange={(e) =>
+                    setInputs((prev) => ({
+                      ...prev,
+                      systemInput: e.target.value,
+                    }))
+                  }
                   className="mt-1 h-12 text-base"
                 />
                 <p className="text-sm text-muted-foreground mt-1">
-                  Detected as: {inputs.inputType === "address" ? "Address" : 
-                              inputs.inputType === "roofSize" ? "Roof Area" : "System Size"}
+                  Detected as:{" "}
+                  {inputs.inputType === "address"
+                    ? "Address"
+                    : inputs.inputType === "roofSize"
+                    ? "Roof Area"
+                    : "System Size"}
                 </p>
               </div>
 
               <div>
-                <Label htmlFor="apartments" className="text-base font-medium flex items-center">
+                <Label
+                  htmlFor="apartments"
+                  className="text-base font-medium flex items-center"
+                >
                   <Building className="h-4 w-4 mr-1" />
                   Number of Apartments
                 </Label>
@@ -181,13 +195,21 @@ const MieterstromCalculator: React.FC = () => {
                   min="1"
                   placeholder="Number of apartments in the building"
                   value={inputs.apartments}
-                  onChange={(e) => setInputs(prev => ({ ...prev, apartments: parseInt(e.target.value) || 1 }))}
+                  onChange={(e) =>
+                    setInputs((prev) => ({
+                      ...prev,
+                      apartments: parseInt(e.target.value) || 1,
+                    }))
+                  }
                   className="mt-1 h-12 text-base"
                 />
               </div>
 
               <div>
-                <Label htmlFor="annualDemand" className="text-base font-medium flex items-center">
+                <Label
+                  htmlFor="annualDemand"
+                  className="text-base font-medium flex items-center"
+                >
                   <Home className="h-4 w-4 mr-1" />
                   Annual Electricity Demand (kWh/year)
                 </Label>
@@ -197,7 +219,12 @@ const MieterstromCalculator: React.FC = () => {
                   min="0"
                   placeholder="Total electricity consumption of the building"
                   value={inputs.annualDemand || ""}
-                  onChange={(e) => setInputs(prev => ({ ...prev, annualDemand: parseFloat(e.target.value) || 0 }))}
+                  onChange={(e) =>
+                    setInputs((prev) => ({
+                      ...prev,
+                      annualDemand: parseFloat(e.target.value) || 0,
+                    }))
+                  }
                   className="mt-1 h-12 text-base"
                 />
               </div>
@@ -206,10 +233,21 @@ const MieterstromCalculator: React.FC = () => {
               <div className="bg-muted/50 p-4 rounded-lg">
                 <h4 className="font-semibold mb-2">Assumptions:</h4>
                 <ul className="text-sm space-y-1 text-muted-foreground">
-                  <li>• Solar yield: {formatNumber(SOLAR_YIELD_PER_KWP)} kWh/kWp/year</li>
-                  <li>• Electricity price for tenants: {ELECTRICITY_PRICE.toFixed(2)} €/kWh</li>
-                  <li>• Grid feed-in tariff: {FEED_IN_TARIFF.toFixed(2)} €/kWh</li>
-                  <li>• Internal consumption: {(INTERNAL_CONSUMPTION_RATE * 100).toFixed(0)}%</li>
+                  <li>
+                    • Solar yield: {formatNumber(SOLAR_YIELD_PER_KWP)}{" "}
+                    kWh/kWp/year
+                  </li>
+                  <li>
+                    • Electricity price for tenants:{" "}
+                    {ELECTRICITY_PRICE.toFixed(2)} €/kWh
+                  </li>
+                  <li>
+                    • Grid feed-in tariff: {FEED_IN_TARIFF.toFixed(2)} €/kWh
+                  </li>
+                  <li>
+                    • Internal consumption:{" "}
+                    {(INTERNAL_CONSUMPTION_RATE * 100).toFixed(0)}%
+                  </li>
                   <li>• Grid feed-in: {(FEED_IN_RATE * 100).toFixed(0)}%</li>
                 </ul>
               </div>
@@ -217,7 +255,10 @@ const MieterstromCalculator: React.FC = () => {
           </Card>
 
           {/* Results */}
-          <Card className="shadow-2xl border-0" style={{ background: results ? 'var(--gradient-result)' : 'var(--gradient-card)' }}>
+          <Card
+            className="shadow-2xl border-0"
+            style={{ background: "var(--gradient-card)" }}
+          >
             <CardHeader className="pb-4">
               <div className="flex items-center">
                 <TrendingUp className="h-6 w-6 text-accent mr-2" />
@@ -236,13 +277,17 @@ const MieterstromCalculator: React.FC = () => {
                       <div className="text-2xl font-bold text-primary">
                         {formatCurrency(results.totalInvestment)}
                       </div>
-                      <div className="text-sm text-muted-foreground">Investment Cost</div>
+                      <div className="text-sm text-muted-foreground">
+                        Investment Cost
+                      </div>
                     </div>
                     <div className="bg-white/70 p-4 rounded-lg text-center">
                       <div className="text-2xl font-bold text-accent">
                         {results.roi.toFixed(1)}%
                       </div>
-                      <div className="text-sm text-muted-foreground">Annual ROI</div>
+                      <div className="text-sm text-muted-foreground">
+                        Annual ROI
+                      </div>
                     </div>
                   </div>
 
@@ -250,63 +295,93 @@ const MieterstromCalculator: React.FC = () => {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center py-2 border-b border-white/20">
                       <span className="font-medium">System Size:</span>
-                      <span className="font-semibold">{formatNumber(results.systemSizeKWp, 1)} kWp</span>
+                      <span className="font-semibold">
+                        {formatNumber(results.systemSizeKWp, 1)} kWp
+                      </span>
                     </div>
-                    
+
                     <div className="flex justify-between items-center py-2 border-b border-white/20">
-                      <span className="font-medium">Annual Solar Production:</span>
-                      <span className="font-semibold">{formatNumber(results.annualProduction)} kWh</span>
+                      <span className="font-medium">
+                        Annual Solar Production:
+                      </span>
+                      <span className="font-semibold">
+                        {formatNumber(results.annualProduction)} kWh
+                      </span>
                     </div>
 
                     <div className="flex justify-between items-center py-2 border-b border-white/20">
                       <span className="font-medium">Annual Revenue:</span>
-                      <span className="font-semibold text-primary">{formatCurrency(results.totalAnnualRevenue)}</span>
+                      <span className="font-semibold text-primary">
+                        {formatCurrency(results.totalAnnualRevenue)}
+                      </span>
                     </div>
 
                     <div className="ml-4 space-y-1 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">• Direct Marketing:</span>
-                        <span>{formatCurrency(results.annualInternalRevenue)}</span>
+                        <span className="text-muted-foreground">
+                          • Direct Marketing:
+                        </span>
+                        <span>
+                          {formatCurrency(results.annualInternalRevenue)}
+                        </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">• Grid Feed-in:</span>
-                        <span>{formatCurrency(results.annualFeedInRevenue)}</span>
+                        <span className="text-muted-foreground">
+                          • Grid Feed-in:
+                        </span>
+                        <span>
+                          {formatCurrency(results.annualFeedInRevenue)}
+                        </span>
                       </div>
                     </div>
 
                     <div className="flex justify-between items-center py-2 border-b border-white/20">
                       <span className="font-medium">Annual O&M Costs:</span>
-                      <span className="font-semibold text-destructive">-{formatCurrency(results.annualOMCost)}</span>
+                      <span className="font-semibold text-destructive">
+                        -{formatCurrency(results.annualOMCost)}
+                      </span>
                     </div>
 
                     <div className="flex justify-between items-center py-2 border-b-2 border-primary/30">
                       <span className="font-bold text-lg">Annual Profit:</span>
-                      <span className="font-bold text-lg text-primary">{formatCurrency(results.annualProfit)}</span>
+                      <span className="font-bold text-lg text-primary">
+                        {formatCurrency(results.annualProfit)}
+                      </span>
                     </div>
 
                     <div className="flex justify-between items-center py-2">
                       <span className="font-medium">Payback Period:</span>
                       <span className="font-semibold text-accent">
-                        {results.paybackPeriod > 0 ? `${formatNumber(results.paybackPeriod, 1)} years` : "Not profitable"}
+                        {results.paybackPeriod > 0
+                          ? `${formatNumber(results.paybackPeriod, 1)} years`
+                          : "Not profitable"}
                       </span>
                     </div>
                   </div>
 
                   {/* Profitability Indicator */}
-                  <div className={`p-4 rounded-lg text-center font-semibold ${
-                    results.roi > 5 ? "bg-primary/20 text-primary" :
-                    results.roi > 0 ? "bg-accent/20 text-accent" :
-                    "bg-destructive/20 text-destructive"
-                  }`}>
-                    {results.roi > 5 ? "✓ Highly Profitable" :
-                     results.roi > 0 ? "○ Moderately Profitable" :
-                     "✗ Not Profitable"}
+                  <div
+                    className={`p-4 rounded-lg text-center font-semibold ${
+                      results.roi > 5
+                        ? "bg-primary/20 text-primary"
+                        : results.roi > 0
+                        ? "bg-accent/20 text-accent"
+                        : "bg-destructive/20 text-destructive"
+                    }`}
+                  >
+                    {results.roi > 5
+                      ? "✓ Highly Profitable"
+                      : results.roi > 0
+                      ? "○ Moderately Profitable"
+                      : "✗ Not Profitable"}
                   </div>
                 </div>
               ) : (
                 <div className="text-center py-12 text-muted-foreground">
                   <Calculator className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg">Enter your parameters to start the calculation</p>
+                  <p className="text-lg">
+                    Enter your parameters to start the calculation
+                  </p>
                 </div>
               )}
             </CardContent>

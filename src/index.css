@@ -41,12 +41,20 @@ All colors MUST be HSL.
     --solar-green-light: 142 76% 45%;
     --solar-blue: 200 100% 45%;
     --solar-blue-light: 200 100% 55%;
-    
+
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--solar-green)), hsl(var(--solar-blue)));
+    --gradient-primary: linear-gradient(
+      135deg,
+      hsl(var(--solar-green)),
+      hsl(var(--solar-blue))
+    );
     --gradient-card: linear-gradient(135deg, hsl(0 0% 100%), hsl(210 30% 98%));
-    --gradient-result: linear-gradient(135deg, hsl(var(--solar-green) / 0.1), hsl(var(--solar-blue) / 0.1));
-    
+    --gradient-result: linear-gradient(
+      135deg,
+      hsl(var(--solar-green) / 0.1),
+      hsl(var(--solar-blue) / 0.1)
+    );
+
     /* Shadows */
     --shadow-card: 0 4px 20px hsl(var(--solar-green) / 0.1);
     --shadow-result: 0 8px 32px hsl(var(--solar-blue) / 0.15);
