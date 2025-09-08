@@ -1,9 +1,10 @@
 export interface CalculationInputs {
   systemInput: string; // Can be address, roof size, or system size
-  inputType: "address" | "roofSize" | "systemSize";
   apartments: number;
   annualDemand: number;
 }
+
+export type InputType = "address" | "roofSize" | "systemSize";
 
 export interface CalculationResults {
   systemSizeKWp: number;

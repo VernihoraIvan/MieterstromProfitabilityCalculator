@@ -18,35 +18,33 @@ import {
   FEED_IN_RATE,
   OM_COST_RATE,
 } from "@/lib/constants";
-import { CalculationInputs, CalculationResults } from "@/lib/types";
+import { CalculationInputs, CalculationResults, InputType } from "@/lib/types";
 
 const MieterstromCalculator: React.FC = () => {
   const [inputs, setInputs] = useState<CalculationInputs>({
     systemInput: "",
-    inputType: "roofSize",
     apartments: 1,
     annualDemand: 0,
   });
 
   const [results, setResults] = useState<CalculationResults | null>(null);
 
-  // Detect input type based on content
-  useEffect(() => {
-    const input = inputs.systemInput.toLowerCase();
-    let detectedType: "address" | "roofSize" | "systemSize" = "address";
-
+  const getInputType = (systemInput: string): InputType => {
+    const input = systemInput.toLowerCase();
     if (input.includes("kwp") || input.includes("kw")) {
-      detectedType = "systemSize";
-    } else if (
+      return "systemSize";
+    }
+    if (
       input.includes("m²") ||
       input.includes("m2") ||
       /^\d+$/.test(input.trim())
     ) {
-      detectedType = "roofSize";
+      return "roofSize";
     }
+    return "address";
+  };
 
-    setInputs((prev) => ({ ...prev, inputType: detectedType }));
-  }, [inputs.systemInput]);
+  const inputType = getInputType(inputs.systemInput);
 
   // Calculate results
   useEffect(() => {
@@ -58,10 +56,10 @@ const MieterstromCalculator: React.FC = () => {
     let systemSizeKWp = 0;
 
     // Calculate system size based on input type
-    if (inputs.inputType === "systemSize") {
+    if (inputType === "systemSize") {
       const match = inputs.systemInput.match(/(\d+(?:\.\d+)?)/);
       systemSizeKWp = match ? parseFloat(match[1]) : 0;
-    } else if (inputs.inputType === "roofSize") {
+    } else if (inputType === "roofSize") {
       const match = inputs.systemInput.match(/(\d+(?:\.\d+)?)/);
       const roofSize = match ? parseFloat(match[1]) : 0;
       systemSizeKWp = roofSize / 5;
@@ -88,6 +86,9 @@ const MieterstromCalculator: React.FC = () => {
     const paybackPeriod = annualProfit > 0 ? totalInvestment / annualProfit : 0;
     const roi =
       totalInvestment > 0 ? (annualProfit / totalInvestment) * 100 : 0;
+    console.log(roi, "roi");
+    console.log(paybackPeriod, "paybackPeriod");
+    console.log(systemSizeKWp, "systemSizeKWp");
 
     setResults({
       systemSizeKWp,
@@ -101,7 +102,7 @@ const MieterstromCalculator: React.FC = () => {
       paybackPeriod,
       roi,
     });
-  }, [inputs]);
+  }, [inputs, inputType]);
 
   const formatNumber = (num: number, decimals: number = 0): string => {
     return new Intl.NumberFormat("de-DE", {
@@ -172,10 +173,10 @@ const MieterstromCalculator: React.FC = () => {
                   className="mt-1 h-12 text-base"
                 />
                 <p className="text-sm text-muted-foreground mt-1">
-                  Detected as:{" "}
-                  {inputs.inputType === "address"
+                  You entered:{" "}
+                  {inputType === "address"
                     ? "Address"
-                    : inputs.inputType === "roofSize"
+                    : inputType === "roofSize"
                     ? "Roof Area"
                     : "System Size"}
                 </p>
